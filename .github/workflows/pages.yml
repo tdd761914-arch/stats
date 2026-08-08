@@ -1,0 +1,42 @@
+name: Deploy benchmark dashboard
+
+on:
+  push:
+    paths:
+      - index.html
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+concurrency:
+  group: dashboard-pages
+  cancel-in-progress: true
+
+permissions:
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout stats
+        uses: actions/checkout@v4
+
+      - name: Prepare static Pages artifact
+        run: |
+          rm -rf site
+          mkdir -p site/data
+          cp index.html site/index.html
+          cp data/benchmarks.json site/data/benchmarks.json
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
