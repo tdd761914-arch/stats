@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>TRBotApi benchmark dashboard</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b1020; --panel:#131b31; --panel2:#18233e; --text:#e9eefb; --muted:#9aa9c7; --line:#2a3a61; --blue:#6ea8fe; --green:#4ade80; --orange:#fbbf24; --red:#fb7185; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:radial-gradient(circle at 10% 0,#182b55 0,#0b1020 42rem); color:var(--text); font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; }
+    main { width:min(1180px,calc(100% - 32px)); margin:0 auto; padding:42px 0 70px; }
+    h1 { margin:0 0 7px; font-size:clamp(28px,5vw,46px); letter-spacing:-.04em; }
+    h2 { margin:0 0 14px; font-size:20px; }
+    p { color:var(--muted); }
+    a { color:var(--blue); }
+    .lede { max-width:760px; margin:0 0 26px; }
+    .toolbar { display:flex; flex-wrap:wrap; gap:9px; align-items:center; margin:18px 0 25px; }
+    .pill,.button { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:999px; padding:6px 11px; color:var(--muted); background:#0f172b; font-size:13px; }
+    .button { cursor:pointer; color:var(--text); }
+    .button:hover { border-color:var(--blue); }
+    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0 0 18px; }
+    .card,.chart-card { background:linear-gradient(145deg,var(--panel),#10182b); border:1px solid var(--line); border-radius:15px; box-shadow:0 14px 38px #02050e55; }
+    .card { padding:16px; min-height:107px; }
+    .card .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+    .card .value { font-size:27px; font-weight:700; margin-top:7px; letter-spacing:-.03em; }
+    .card .sub { color:var(--muted); font-size:12px; margin-top:3px; }
+    .charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; margin:18px 0; }
+    .chart-card { padding:17px 17px 13px; }
+    .chart-card.wide { grid-column:1/-1; }
+    .chart { width:100%; height:245px; display:block; overflow:visible; }
+    .legend { display:flex; flex-wrap:wrap; gap:12px; color:var(--muted); font-size:12px; margin:0 0 7px; }
+    .legend span::before { content:""; display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; background:var(--c); }
+    .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:15px; background:var(--panel); }
+    table { width:100%; border-collapse:collapse; min-width:830px; }
+    th,td { text-align:left; padding:11px 13px; border-bottom:1px solid #243352; white-space:nowrap; }
+    th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.06em; background:#10182b; }
+    tr:last-child td { border-bottom:0; }
+    .ok { color:var(--green); } .bad { color:var(--red); } .warn { color:var(--orange); }
+    footer { color:var(--muted); font-size:12px; margin-top:25px; }
+    @media (max-width:850px) { .grid{grid-template-columns:repeat(2,minmax(0,1fr));}.charts{grid-template-columns:1fr}.chart-card.wide{grid-column:auto;} }
+    @media (max-width:500px) { main{width:min(100% - 22px,1180px);padding-top:28px}.grid{grid-template-columns:1fr 1fr;gap:8px}.card{padding:12px}.card .value{font-size:21px} }
+  </style>
+</head>
+<body>
+<main>
+  <h1>TRBotApi benchmark dashboard</h1>
+  <p class="lede">Hourly comparison of Telegram's official Test Bot API and the local TRBotApi reference edge. The page is static: tokens and API credentials never reach the browser.</p>
+  <div class="toolbar">
+    <span class="pill" id="status">Loading benchmark history…</span>
+    <button class="button" id="refresh" type="button">Refresh</button>
+    <a class="pill" href="https://github.com/tdd761914-arch/stats">Source</a>
+    <a class="pill" href="https://github.com/tdd761914-arch/TRBotApi">TRBotApi</a>
+  </div>
+
+  <section class="grid" aria-label="Latest summary">
+    <div class="card"><div class="label">Latest run</div><div class="value" id="latest-time">—</div><div class="sub" id="run-status">—</div></div>
+    <div class="card"><div class="label">Official p50</div><div class="value" id="official-p50">—</div><div class="sub">getMe HTTPS latency</div></div>
+    <div class="card"><div class="label">TRBotApi p50</div><div class="value" id="trlib-p50">—</div><div class="sub">local HTTP fast path</div></div>
+    <div class="card"><div class="label">TRBotApi peak RSS</div><div class="value" id="peak-rss">—</div><div class="sub">largest observed bot process</div></div>
+  </section>
+
+  <section class="charts" aria-label="Benchmark charts">
+    <article class="chart-card wide"><h2>Latency over time</h2><div class="legend"><span style="--c:#6ea8fe">Official Bot API p50</span><span style="--c:#4ade80">TRBotApi p50</span><span style="--c:#fbbf24">Official Bot API p95</span><span style="--c:#fb7185">TRBotApi p95</span></div><svg class="chart" id="latency-chart" role="img" aria-label="Latency chart"></svg></article>
+    <article class="chart-card"><h2>Memory per bot</h2><div class="legend"><span style="--c:#4ade80">RSS</span><span style="--c:#6ea8fe">PSS</span><span style="--c:#fbbf24">HWM</span></div><svg class="chart" id="memory-chart" role="img" aria-label="Memory chart"></svg></article>
+    <article class="chart-card"><h2>Success rate</h2><div class="legend"><span style="--c:#6ea8fe">Official getMe</span><span style="--c:#4ade80">TRBotApi getMe</span><span style="--c:#fb7185">TRBotApi chat action</span></div><svg class="chart" id="success-chart" role="img" aria-label="Success rate chart"></svg></article>
+  </section>
+
+  <section>
+    <h2>Recent runs</h2>
+    <div class="table-wrap"><table><thead><tr><th>UTC</th><th>Bot</th><th>Official getMe</th><th>TRBotApi getMe</th><th>Chat action</th><th>RSS</th><th>PSS</th><th>HWM</th></tr></thead><tbody id="runs"></tbody></table></div>
+  </section>
+  <footer>Charts use inline SVG and vanilla JavaScript. Empty or failed samples remain visible so outages are not silently discarded. Data source: <code>data/benchmarks.json</code>.</footer>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n, digits = 1) => Number.isFinite(Number(n)) ? Number(n).toFixed(digits) : "—";
+  const ms = (v) => Number.isFinite(Number(v)) ? `${fmt(v)} ms` : "—";
+  const mib = (v) => Number.isFinite(Number(v)) ? `${fmt(Number(v) / 1024)} MiB` : "—";
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  const metric = (entry, path) => path.reduce((value, key) => value && value[key], entry);
+  const summary = (series) => {
+    const values = series.filter((v) => Number.isFinite(Number(v))).map(Number);
+    if (!values.length) return { p50: NaN, p95: NaN, mean: NaN, count: 0 };
+    const sorted = [...values].sort((a,b) => a-b);
+    const at = (p) => sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p))];
+    return { p50: at(.5), p95: at(.95), mean: values.reduce((a,b) => a+b,0) / values.length, count: values.length };
+  };
+  const bots = (entry) => Object.entries(entry.bots || {});
+  const botEntries = (entry) => bots(entry).map(([id, value]) => ({ id, ...value }));
+  const niceMax = (max) => max <= 0 ? 1 : max * 1.14;
+
+  function drawChart(id, lines, labels, unit) {
+    const svg = $(id), width = 900, height = 245, pad = { l: 48, r: 15, t: 12, b: 28 };
+    const all = lines.flatMap((line) => line.values.filter(Number.isFinite));
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`); svg.innerHTML = "";
+    if (!all.length) { svg.innerHTML = `<text x="${width/2}" y="${height/2}" text-anchor="middle" fill="#9aa9c7">No data yet</text>`; return; }
+    const max = niceMax(Math.max(...all)), min = Math.min(0, Math.min(...all));
+    const x = (i) => pad.l + (i * (width - pad.l - pad.r) / Math.max(1, labels.length - 1));
+    const y = (v) => height - pad.b - ((v - min) / Math.max(1, max - min)) * (height - pad.t - pad.b);
+    const line = (x1,y1,x2,y2,stroke="#2a3a61",dash="") => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="1" ${dash ? `stroke-dasharray="${dash}"` : ""}/>`;
+    let html = "";
+    for (let i=0;i<5;i++) { const value = min + (max-min) * i/4; const yy = y(value); html += line(pad.l, yy, width-pad.r, yy); html += `<text x="${pad.l-8}" y="${yy+4}" text-anchor="end" fill="#9aa9c7" font-size="11">${fmt(value)}${unit}</text>`; }
+    labels.forEach((label,i) => { if (labels.length < 8 || i === 0 || i === labels.length-1 || i % Math.ceil(labels.length/6) === 0) html += `<text x="${x(i)}" y="${height-7}" text-anchor="middle" fill="#9aa9c7" font-size="10">${esc(label)}</text>`; });
+    for (const series of lines) {
+      const points = series.values.map((value,i) => Number.isFinite(value) ? `${x(i)},${y(value)}` : "").filter(Boolean).join(" ");
+      if (!points) continue;
+      html += `<polyline points="${points}" fill="none" stroke="${series.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+      series.values.forEach((value,i) => { if (Number.isFinite(value)) html += `<circle cx="${x(i)}" cy="${y(value)}" r="3" fill="${series.color}"/>`; });
+    }
+    svg.innerHTML = html;
+  }
+
+  function render(data) {
+    const history = Array.isArray(data) ? data.filter((x) => x && x.generated_at) : [];
+    const last = history[history.length - 1];
+    $("status").textContent = history.length ? `${history.length} hourly runs loaded` : "No runs recorded yet";
+    if (!last) { $("runs").innerHTML = `<tr><td colspan="8">Waiting for the first GitHub Actions run.</td></tr>`; ["latency-chart","memory-chart","success-chart"].forEach((id) => drawChart(id, [], [], "")); return; }
+    $("latest-time").textContent = new Date(last.generated_at).toLocaleString();
+    $("run-status").textContent = last.status === "ok" ? "latest run passed" : `latest run: ${last.status || "error"}`;
+    const lastBots = botEntries(last);
+    const currentOfficial = lastBots.map((b) => Number(b.official_get_me?.p50_ms)).filter(Number.isFinite);
+    const currentLocal = lastBots.map((b) => Number(b.trbotapi_get_me?.p50_ms)).filter(Number.isFinite);
+    $("official-p50").textContent = ms(summary(currentOfficial).p50);
+    $("trlib-p50").textContent = ms(summary(currentLocal).p50);
+    const rss = lastBots.flatMap((b) => [Number(b.memory?.rss_after_kib), Number(b.memory?.hwm_kib)]).filter(Number.isFinite);
+    $("peak-rss").textContent = rss.length ? mib(Math.max(...rss)) : "—";
+
+    const labels = history.map((x) => new Date(x.generated_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }));
+    const latency = (name, key, color) => ({ values: history.map((run) => { const vals = botEntries(run).flatMap((b) => [Number(b[name]?.[key])]).filter(Number.isFinite); return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : NaN; }), color });
+    drawChart("latency-chart", [latency("official_get_me","p50_ms","#6ea8fe"), latency("trbotapi_get_me","p50_ms","#4ade80"), latency("official_get_me","p95_ms","#fbbf24"), latency("trbotapi_get_me","p95_ms","#fb7185")], labels, " ms");
+    const memory = (key, color) => ({ values: history.map((run) => { const vals = botEntries(run).map((b) => Number(b.memory?.[key])).filter(Number.isFinite); return vals.length ? Math.max(...vals) : NaN; }), color });
+    drawChart("memory-chart", [memory("rss_after_kib","#4ade80"), memory("pss_kib","#6ea8fe"), memory("hwm_kib","#fbbf24")], labels, " KiB");
+    const success = (name, color) => ({ values: history.map((run) => { const vals = botEntries(run).map((b) => Number(b[name]?.success_rate)).filter(Number.isFinite); return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length*100 : NaN; }), color });
+    drawChart("success-chart", [success("official_get_me","#6ea8fe"), success("trbotapi_get_me","#4ade80"), success("trbotapi_chat_action","#fb7185")], labels, "%");
+    $("runs").innerHTML = history.slice(-40).reverse().flatMap((run) => botEntries(run).map((bot) => {
+      const klass = (v) => v >= 0.999 ? "ok" : v > 0 ? "warn" : "bad";
+      return `<tr><td>${esc(new Date(run.generated_at).toLocaleString())}</td><td>${esc(bot.id)}</td><td class="${klass(bot.official_get_me?.success_rate)}">${fmt(bot.official_get_me?.success_rate*100,1)}% / ${ms(bot.official_get_me?.p50_ms)}</td><td class="${klass(bot.trbotapi_get_me?.success_rate)}">${fmt(bot.trbotapi_get_me?.success_rate*100,1)}% / ${ms(bot.trbotapi_get_me?.p50_ms)}</td><td class="${klass(bot.trbotapi_chat_action?.success_rate)}">${fmt(bot.trbotapi_chat_action?.success_rate*100,1)}%</td><td>${mib(bot.memory?.rss_after_kib)}</td><td>${mib(bot.memory?.pss_kib)}</td><td>${mib(bot.memory?.hwm_kib)}</td></tr>`;
+    })).join("");
+  }
+  async function load() {
+    $("status").textContent = "Loading benchmark history…";
+    try { const response = await fetch(`data/benchmarks.json?ts=${Date.now()}`, { cache:"no-store" }); if (!response.ok) throw new Error(`HTTP ${response.status}`); render(await response.json()); }
+    catch (error) { $("status").textContent = `Data unavailable: ${error.message}`; $("run-status").textContent = "GitHub Actions may not have run yet"; }
+  }
+  $("refresh").addEventListener("click", load); load();
+})();
+</script>
+</body>
+</html>
