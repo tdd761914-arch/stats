@@ -45,7 +45,7 @@
 <body>
 <main>
   <h1>TRBotApi benchmark dashboard</h1>
-  <p class="lede">Hourly comparison of Telegram's official Test Bot API and the local TRBotApi reference edge. The page is static: tokens and API credentials never reach the browser.</p>
+  <p class="lede">Hourly comparison of Telegram's official <code>tdlib/telegram-bot-api</code> server and the local TRBotApi reference edge. Both servers run on the same runner; tokens and API credentials never reach the browser.</p>
   <div class="toolbar">
     <span class="pill" id="status">Loading benchmark history…</span>
     <button class="button" id="refresh" type="button">Refresh</button>
@@ -55,20 +55,20 @@
 
   <section class="grid" aria-label="Latest summary">
     <div class="card"><div class="label">Latest run</div><div class="value" id="latest-time">—</div><div class="sub" id="run-status">—</div></div>
-    <div class="card"><div class="label">Official p50</div><div class="value" id="official-p50">—</div><div class="sub">getMe HTTPS latency</div></div>
+    <div class="card"><div class="label">Official p50</div><div class="value" id="official-p50">—</div><div class="sub">local official-server latency</div></div>
     <div class="card"><div class="label">TRBotApi p50</div><div class="value" id="trlib-p50">—</div><div class="sub">local HTTP fast path</div></div>
-    <div class="card"><div class="label">TRBotApi peak RSS</div><div class="value" id="peak-rss">—</div><div class="sub">largest observed bot process</div></div>
+    <div class="card"><div class="label">Peak RSS official / TRBotApi</div><div class="value" id="peak-rss">—</div><div class="sub">largest observed bot process</div></div>
   </section>
 
   <section class="charts" aria-label="Benchmark charts">
     <article class="chart-card wide"><h2>Latency over time</h2><div class="legend"><span style="--c:#6ea8fe">Official Bot API p50</span><span style="--c:#4ade80">TRBotApi p50</span><span style="--c:#fbbf24">Official Bot API p95</span><span style="--c:#fb7185">TRBotApi p95</span></div><svg class="chart" id="latency-chart" role="img" aria-label="Latency chart"></svg></article>
-    <article class="chart-card"><h2>Memory per bot</h2><div class="legend"><span style="--c:#4ade80">RSS</span><span style="--c:#6ea8fe">PSS</span><span style="--c:#fbbf24">HWM</span></div><svg class="chart" id="memory-chart" role="img" aria-label="Memory chart"></svg></article>
-    <article class="chart-card"><h2>Success rate</h2><div class="legend"><span style="--c:#6ea8fe">Official getMe</span><span style="--c:#4ade80">TRBotApi getMe</span><span style="--c:#fb7185">TRBotApi chat action</span></div><svg class="chart" id="success-chart" role="img" aria-label="Success rate chart"></svg></article>
+    <article class="chart-card"><h2>Memory per bot</h2><div class="legend"><span style="--c:#6ea8fe">Official RSS</span><span style="--c:#4ade80">TRBotApi RSS</span><span style="--c:#fbbf24">Official PSS</span><span style="--c:#fb7185">TRBotApi PSS</span></div><svg class="chart" id="memory-chart" role="img" aria-label="Memory chart"></svg></article>
+    <article class="chart-card"><h2>Success rate</h2><div class="legend"><span style="--c:#6ea8fe">Official getMe</span><span style="--c:#4ade80">TRBotApi getMe</span><span style="--c:#fbbf24">Official chat action</span><span style="--c:#fb7185">TRBotApi chat action</span></div><svg class="chart" id="success-chart" role="img" aria-label="Success rate chart"></svg></article>
   </section>
 
   <section>
     <h2>Recent runs</h2>
-    <div class="table-wrap"><table><thead><tr><th>UTC</th><th>Bot</th><th>Official getMe</th><th>TRBotApi getMe</th><th>Chat action</th><th>RSS</th><th>PSS</th><th>HWM</th></tr></thead><tbody id="runs"></tbody></table></div>
+    <div class="table-wrap"><table><thead><tr><th>UTC</th><th>Bot</th><th>Official getMe</th><th>TRBotApi getMe</th><th>Official chat</th><th>TRBotApi chat</th><th>Official RSS</th><th>TRBotApi RSS</th><th>Official PSS</th><th>TRBotApi PSS</th></tr></thead><tbody id="runs"></tbody></table></div>
   </section>
   <footer>Charts use inline SVG and vanilla JavaScript. Empty or failed samples remain visible so outages are not silently discarded. Data source: <code>data/benchmarks.json</code>.</footer>
 </main>
@@ -116,7 +116,7 @@
     const history = Array.isArray(data) ? data.filter((x) => x && x.generated_at) : [];
     const last = history[history.length - 1];
     $("status").textContent = history.length ? `${history.length} hourly runs loaded` : "No runs recorded yet";
-    if (!last) { $("runs").innerHTML = `<tr><td colspan="8">Waiting for the first GitHub Actions run.</td></tr>`; ["latency-chart","memory-chart","success-chart"].forEach((id) => drawChart(id, [], [], "")); return; }
+    if (!last) { $("runs").innerHTML = `<tr><td colspan="10">Waiting for the first GitHub Actions run.</td></tr>`; ["latency-chart","memory-chart","success-chart"].forEach((id) => drawChart(id, [], [], "")); return; }
     $("latest-time").textContent = new Date(last.generated_at).toLocaleString();
     $("run-status").textContent = last.status === "ok" ? "latest run passed" : `latest run: ${last.status || "error"}`;
     const lastBots = botEntries(last);
@@ -124,19 +124,20 @@
     const currentLocal = lastBots.map((b) => Number(b.trbotapi_get_me?.p50_ms)).filter(Number.isFinite);
     $("official-p50").textContent = ms(summary(currentOfficial).p50);
     $("trlib-p50").textContent = ms(summary(currentLocal).p50);
-    const rss = lastBots.flatMap((b) => [Number(b.memory?.rss_after_kib), Number(b.memory?.hwm_kib)]).filter(Number.isFinite);
-    $("peak-rss").textContent = rss.length ? mib(Math.max(...rss)) : "—";
+    const officialRss = lastBots.map((b) => Number(b.official_memory?.rss_after_kib)).filter(Number.isFinite);
+    const trbotapiRss = lastBots.map((b) => Number(b.trbotapi_memory?.rss_after_kib)).filter(Number.isFinite);
+    $("peak-rss").textContent = `${officialRss.length ? mib(Math.max(...officialRss)) : "—"} / ${trbotapiRss.length ? mib(Math.max(...trbotapiRss)) : "—"}`;
 
     const labels = history.map((x) => new Date(x.generated_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }));
     const latency = (name, key, color) => ({ values: history.map((run) => { const vals = botEntries(run).flatMap((b) => [Number(b[name]?.[key])]).filter(Number.isFinite); return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : NaN; }), color });
     drawChart("latency-chart", [latency("official_get_me","p50_ms","#6ea8fe"), latency("trbotapi_get_me","p50_ms","#4ade80"), latency("official_get_me","p95_ms","#fbbf24"), latency("trbotapi_get_me","p95_ms","#fb7185")], labels, " ms");
-    const memory = (key, color) => ({ values: history.map((run) => { const vals = botEntries(run).map((b) => Number(b.memory?.[key])).filter(Number.isFinite); return vals.length ? Math.max(...vals) : NaN; }), color });
-    drawChart("memory-chart", [memory("rss_after_kib","#4ade80"), memory("pss_kib","#6ea8fe"), memory("hwm_kib","#fbbf24")], labels, " KiB");
+    const memory = (source, key, color) => ({ values: history.map((run) => { const vals = botEntries(run).map((b) => Number(b[source]?.[key])).filter(Number.isFinite); return vals.length ? Math.max(...vals) : NaN; }), color });
+    drawChart("memory-chart", [memory("official_memory","rss_after_kib","#6ea8fe"), memory("trbotapi_memory","rss_after_kib","#4ade80"), memory("official_memory","pss_kib","#fbbf24"), memory("trbotapi_memory","pss_kib","#fb7185")], labels, " KiB");
     const success = (name, color) => ({ values: history.map((run) => { const vals = botEntries(run).map((b) => Number(b[name]?.success_rate)).filter(Number.isFinite); return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length*100 : NaN; }), color });
-    drawChart("success-chart", [success("official_get_me","#6ea8fe"), success("trbotapi_get_me","#4ade80"), success("trbotapi_chat_action","#fb7185")], labels, "%");
+    drawChart("success-chart", [success("official_get_me","#6ea8fe"), success("trbotapi_get_me","#4ade80"), success("official_chat_action","#fbbf24"), success("trbotapi_chat_action","#fb7185")], labels, "%");
     $("runs").innerHTML = history.slice(-40).reverse().flatMap((run) => botEntries(run).map((bot) => {
       const klass = (v) => v >= 0.999 ? "ok" : v > 0 ? "warn" : "bad";
-      return `<tr><td>${esc(new Date(run.generated_at).toLocaleString())}</td><td>${esc(bot.id)}</td><td class="${klass(bot.official_get_me?.success_rate)}">${fmt(bot.official_get_me?.success_rate*100,1)}% / ${ms(bot.official_get_me?.p50_ms)}</td><td class="${klass(bot.trbotapi_get_me?.success_rate)}">${fmt(bot.trbotapi_get_me?.success_rate*100,1)}% / ${ms(bot.trbotapi_get_me?.p50_ms)}</td><td class="${klass(bot.trbotapi_chat_action?.success_rate)}">${fmt(bot.trbotapi_chat_action?.success_rate*100,1)}%</td><td>${mib(bot.memory?.rss_after_kib)}</td><td>${mib(bot.memory?.pss_kib)}</td><td>${mib(bot.memory?.hwm_kib)}</td></tr>`;
+      return `<tr><td>${esc(new Date(run.generated_at).toLocaleString())}</td><td>${esc(bot.id)}</td><td class="${klass(bot.official_get_me?.success_rate)}">${fmt(bot.official_get_me?.success_rate*100,1)}% / ${ms(bot.official_get_me?.p50_ms)}</td><td class="${klass(bot.trbotapi_get_me?.success_rate)}">${fmt(bot.trbotapi_get_me?.success_rate*100,1)}% / ${ms(bot.trbotapi_get_me?.p50_ms)}</td><td class="${klass(bot.official_chat_action?.success_rate)}">${fmt(bot.official_chat_action?.success_rate*100,1)}%</td><td class="${klass(bot.trbotapi_chat_action?.success_rate)}">${fmt(bot.trbotapi_chat_action?.success_rate*100,1)}%</td><td>${mib(bot.official_memory?.rss_after_kib)}</td><td>${mib(bot.trbotapi_memory?.rss_after_kib)}</td><td>${mib(bot.official_memory?.pss_kib)}</td><td>${mib(bot.trbotapi_memory?.pss_kib)}</td></tr>`;
     })).join("");
   }
   async function load() {
