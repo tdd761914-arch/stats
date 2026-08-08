@@ -8,6 +8,7 @@
   <style>
     :root { color-scheme: dark; --bg:#0b1020; --panel:#131b31; --panel2:#18233e; --text:#e9eefb; --muted:#9aa9c7; --line:#2a3a61; --blue:#6ea8fe; --green:#4ade80; --orange:#fbbf24; --red:#fb7185; }
     * { box-sizing:border-box; }
+    html, body { max-width:100%; overflow-x:hidden; }
     body { margin:0; background:radial-gradient(circle at 10% 0,#182b55 0,#0b1020 42rem); color:var(--text); font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; }
     main { width:min(1180px,calc(100% - 32px)); margin:0 auto; padding:42px 0 70px; }
     h1 { margin:0 0 7px; font-size:clamp(28px,5vw,46px); letter-spacing:-.04em; }
@@ -39,7 +40,28 @@
     .ok { color:var(--green); } .bad { color:var(--red); } .warn { color:var(--orange); }
     footer { color:var(--muted); font-size:12px; margin-top:25px; }
     @media (max-width:850px) { .grid{grid-template-columns:repeat(2,minmax(0,1fr));}.charts{grid-template-columns:1fr}.chart-card.wide{grid-column:auto;} }
-    @media (max-width:500px) { main{width:min(100% - 22px,1180px);padding-top:28px}.grid{grid-template-columns:1fr 1fr;gap:8px}.card{padding:12px}.card .value{font-size:21px} }
+    @media (max-width:600px) {
+      main { width:100%; padding:26px 12px 48px; }
+      h1 { font-size:30px; line-height:1.08; }
+      .lede { font-size:14px; margin-bottom:18px; }
+      .toolbar { margin:12px 0 18px; }
+      .grid { grid-template-columns:1fr 1fr; gap:8px; }
+      .card { min-height:94px; padding:12px; }
+      .card .value { font-size:21px; overflow-wrap:anywhere; }
+      .card .sub { line-height:1.25; }
+      .chart-card { padding:13px 10px 9px; }
+      .chart-card h2 { font-size:17px; }
+      .chart { height:190px; }
+      .legend { gap:7px 10px; font-size:11px; }
+      .table-wrap { overflow:visible; border:0; background:transparent; }
+      table { min-width:0; display:block; }
+      thead { display:none; }
+      tbody, tr, td { display:block; width:100%; }
+      tr { margin:0 0 10px; padding:8px 10px; background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+      td { padding:4px 0; border:0; white-space:normal; font-size:13px; overflow-wrap:anywhere; }
+      td::before { content:attr(data-label); display:inline-block; min-width:116px; margin-right:6px; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; vertical-align:top; }
+    }
+    @media (max-width:380px) { .grid { grid-template-columns:1fr; }.card { min-height:76px; }.card .value { font-size:24px; } }
   </style>
 </head>
 <body>
@@ -137,7 +159,7 @@
     drawChart("success-chart", [success("official_get_me","#6ea8fe"), success("trbotapi_get_me","#4ade80"), success("official_chat_action","#fbbf24"), success("trbotapi_chat_action","#fb7185")], labels, "%");
     $("runs").innerHTML = history.slice(-40).reverse().flatMap((run) => botEntries(run).map((bot) => {
       const klass = (v) => v >= 0.999 ? "ok" : v > 0 ? "warn" : "bad";
-      return `<tr><td>${esc(new Date(run.generated_at).toLocaleString())}</td><td>${esc(bot.id)}</td><td class="${klass(bot.official_get_me?.success_rate)}">${fmt(bot.official_get_me?.success_rate*100,1)}% / ${ms(bot.official_get_me?.p50_ms)}</td><td class="${klass(bot.trbotapi_get_me?.success_rate)}">${fmt(bot.trbotapi_get_me?.success_rate*100,1)}% / ${ms(bot.trbotapi_get_me?.p50_ms)}</td><td class="${klass(bot.official_chat_action?.success_rate)}">${fmt(bot.official_chat_action?.success_rate*100,1)}%</td><td class="${klass(bot.trbotapi_chat_action?.success_rate)}">${fmt(bot.trbotapi_chat_action?.success_rate*100,1)}%</td><td>${mib(bot.official_memory?.rss_after_kib)}</td><td>${mib(bot.trbotapi_memory?.rss_after_kib)}</td><td>${mib(bot.official_memory?.pss_kib)}</td><td>${mib(bot.trbotapi_memory?.pss_kib)}</td></tr>`;
+      return `<tr><td data-label="UTC">${esc(new Date(run.generated_at).toLocaleString())}</td><td data-label="Bot">${esc(bot.id)}</td><td data-label="Official getMe" class="${klass(bot.official_get_me?.success_rate)}">${fmt(bot.official_get_me?.success_rate*100,1)}% / ${ms(bot.official_get_me?.p50_ms)}</td><td data-label="TRBotApi getMe" class="${klass(bot.trbotapi_get_me?.success_rate)}">${fmt(bot.trbotapi_get_me?.success_rate*100,1)}% / ${ms(bot.trbotapi_get_me?.p50_ms)}</td><td data-label="Official chat" class="${klass(bot.official_chat_action?.success_rate)}">${fmt(bot.official_chat_action?.success_rate*100,1)}%</td><td data-label="TRBotApi chat" class="${klass(bot.trbotapi_chat_action?.success_rate)}">${fmt(bot.trbotapi_chat_action?.success_rate*100,1)}%</td><td data-label="Official RSS">${mib(bot.official_memory?.rss_after_kib)}</td><td data-label="TRBotApi RSS">${mib(bot.trbotapi_memory?.rss_after_kib)}</td><td data-label="Official PSS">${mib(bot.official_memory?.pss_kib)}</td><td data-label="TRBotApi PSS">${mib(bot.trbotapi_memory?.pss_kib)}</td></tr>`;
     })).join("");
   }
   async function load() {
