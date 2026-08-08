@@ -33,6 +33,7 @@
     .legend { display:flex; flex-wrap:wrap; gap:12px; color:var(--muted); font-size:12px; margin:0 0 7px; }
     .legend span::before { content:""; display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; background:var(--c); }
     .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:15px; background:var(--panel); }
+    .table-note { margin:0 0 10px; font-size:13px; }
     table { width:100%; border-collapse:collapse; min-width:830px; }
     th,td { text-align:left; padding:11px 13px; border-bottom:1px solid #243352; white-space:nowrap; }
     th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.06em; background:#10182b; }
@@ -90,6 +91,7 @@
 
   <section>
     <h2>Recent runs</h2>
+    <p class="table-note">Chat action is a compatibility probe. A red TRBotApi result currently means the Rust edge has no <code>access_hash</code> entity resolver for that numeric chat yet; it is recorded as a real difference, not omitted.</p>
     <div class="table-wrap"><table><thead><tr><th>UTC</th><th>Bot</th><th>Official getMe</th><th>TRBotApi getMe</th><th>Official chat</th><th>TRBotApi chat</th><th>Official RSS</th><th>TRBotApi RSS</th><th>Official PSS</th><th>TRBotApi PSS</th></tr></thead><tbody id="runs"></tbody></table></div>
   </section>
   <footer>Charts use inline SVG and vanilla JavaScript. Empty or failed samples remain visible so outages are not silently discarded. Data source: <code>data/benchmarks.json</code>.</footer>
