@@ -84,6 +84,7 @@ jobs:
             echo "No benchmark data change"
           else
             git commit -m "chore: record benchmark $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git pull --rebase origin main
             git push
           fi
 
