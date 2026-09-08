@@ -45898,5 +45898,158 @@
         }
       }
     }
+  },
+  {
+    "schema": 1,
+    "status": "ok",
+    "generated_at": "2026-09-08T00:14:08.549422Z",
+    "repositories": {
+      "trbotapi": {
+        "name": "tdd761914-arch/TRBotApi",
+        "sha": "34bfec12ad6180a00b872b4a699814a15c7d6baa"
+      },
+      "official": {
+        "name": "tdlib/telegram-bot-api",
+        "sha": "e3e9dd8e5b3d7ab8537cd5a10dc31d5ffa8f82d1"
+      }
+    },
+    "runner": {
+      "os": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+      "python": "3.12.3"
+    },
+    "samples_per_method": 5,
+    "test_dc": "149.154.167.40:80",
+    "artifact": {
+      "trbotapi_release_binary_bytes": 1393096,
+      "official_release_binary_bytes": 46298096
+    },
+    "bots": {
+      "5001248621": {
+        "id": "5001248621",
+        "official_get_me": {
+          "samples": 5,
+          "successes": 5,
+          "success_rate": 1.0,
+          "mean_ms": 0.344,
+          "p50_ms": 0.302,
+          "p95_ms": 0.303,
+          "min_ms": 0.233,
+          "max_ms": 0.585,
+          "last_error_code": null
+        },
+        "trbotapi_get_me": {
+          "samples": 5,
+          "successes": 5,
+          "success_rate": 1.0,
+          "mean_ms": 0.286,
+          "p50_ms": 0.237,
+          "p95_ms": 0.253,
+          "min_ms": 0.206,
+          "max_ms": 0.521,
+          "last_error_code": null
+        },
+        "official_chat_action": {
+          "samples": 1,
+          "successes": 1,
+          "success_rate": 1.0,
+          "mean_ms": 234.003,
+          "p50_ms": 234.003,
+          "p95_ms": 234.003,
+          "min_ms": 234.003,
+          "max_ms": 234.003,
+          "last_error_code": null
+        },
+        "trbotapi_chat_action": {
+          "samples": 1,
+          "successes": 0,
+          "success_rate": 0.0,
+          "mean_ms": 1.015,
+          "p50_ms": 1.015,
+          "p95_ms": 1.015,
+          "min_ms": 1.015,
+          "max_ms": 1.015,
+          "last_error_code": 400
+        },
+        "official_memory": {
+          "rss_start_kib": 36436,
+          "rss_after_kib": 38148,
+          "hwm_kib": 38148,
+          "pss_kib": 21283,
+          "vmsize_kib": 953596,
+          "threads": 12
+        },
+        "trbotapi_memory": {
+          "rss_start_kib": 3744,
+          "rss_after_kib": 5016,
+          "hwm_kib": 5016,
+          "pss_kib": 2856,
+          "vmsize_kib": 71852,
+          "threads": 2
+        }
+      },
+      "5001783103": {
+        "id": "5001783103",
+        "official_get_me": {
+          "samples": 5,
+          "successes": 5,
+          "success_rate": 1.0,
+          "mean_ms": 0.248,
+          "p50_ms": 0.201,
+          "p95_ms": 0.247,
+          "min_ms": 0.192,
+          "max_ms": 0.407,
+          "last_error_code": null
+        },
+        "trbotapi_get_me": {
+          "samples": 5,
+          "successes": 5,
+          "success_rate": 1.0,
+          "mean_ms": 0.225,
+          "p50_ms": 0.209,
+          "p95_ms": 0.221,
+          "min_ms": 0.191,
+          "max_ms": 0.306,
+          "last_error_code": null
+        },
+        "official_chat_action": {
+          "samples": 1,
+          "successes": 1,
+          "success_rate": 1.0,
+          "mean_ms": 226.441,
+          "p50_ms": 226.441,
+          "p95_ms": 226.441,
+          "min_ms": 226.441,
+          "max_ms": 226.441,
+          "last_error_code": null
+        },
+        "trbotapi_chat_action": {
+          "samples": 1,
+          "successes": 0,
+          "success_rate": 0.0,
+          "mean_ms": 0.942,
+          "p50_ms": 0.942,
+          "p95_ms": 0.942,
+          "min_ms": 0.942,
+          "max_ms": 0.942,
+          "last_error_code": 400
+        },
+        "official_memory": {
+          "rss_start_kib": 36420,
+          "rss_after_kib": 38124,
+          "hwm_kib": 38124,
+          "pss_kib": 20541,
+          "vmsize_kib": 953596,
+          "threads": 12
+        },
+        "trbotapi_memory": {
+          "rss_start_kib": 3740,
+          "rss_after_kib": 5012,
+          "hwm_kib": 5012,
+          "pss_kib": 2820,
+          "vmsize_kib": 71852,
+          "threads": 2
+        }
+      }
+    }
   }
 ]
